@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title></title>
+
+<!--
+  ┌─────────────────────────────────────────────────────────────┐
+  │  여기만 바꾸면 됩니다                                          │
+  │  아래 VIDEO_SRC 에 영상 주소(또는 파일 이름)를 넣으세요.       │
+  │   · 같은 폴더에 영상 파일을 둘 경우:  "dog.mp4"               │
+  │   · 다른 곳에 올려두고 가져올 경우:   "https://.../dog.mp4"   │
+  └─────────────────────────────────────────────────────────────┘
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,300&display=swap" rel="stylesheet" />
+
+<style>
+  :root {
+    --bg: #ffffff;
+    --ink: #111111;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    background: var(--bg);
+    overflow: hidden;
+  }
+
+  /* ── 영상 무대 (흰 배경 위 중앙) ────────────────────────── */
+  #stage {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+  }
+
+  #vid {
+    max-width: 88vw;
+    max-height: 86vh;
+    width: auto;
+    height: auto;
+    opacity: 0;
+    transition: opacity 1.2s ease 0.2s;
+    /* 영상이 흰 배경에 자연스럽게 놓이도록 그림자 등은 두지 않음 */
+  }
+  #vid.live { opacity: 1; }
+
+  /* ── 입장 화면 (흰 오버레이) ───────────────────────────── */
+  #enter {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: opacity 1s ease;
+  }
+  #enter.gone {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .enter-label {
+    font-family: "Fraunces", Georgia, serif;
+    font-style: italic;
+    font-weight: 300;
+    font-size: clamp(1.1rem, 2.4vw, 1.6rem);
+    letter-spacing: 0.06em;
+    color: var(--ink);
+    opacity: 0.55;
+    animation: breathe 3.4s ease-in-out infinite;
+    user-select: none;
+  }
+
+  @keyframes breathe {
+    0%, 100% { opacity: 0.30; }
+    50%      { opacity: 0.70; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- 영상 무대 -->
+  <div id="stage">
+    <video id="vid" playsinline loop preload="auto">
+      <!-- ↓↓↓ 여기에 영상 주소(또는 파일 이름)를 넣으세요 ↓↓↓ -->
+      <source src="VIDEO_SRC_HERE" type="video/mp4" />
+    </video>
+  </div>
+
+  <!-- 입장 화면: 클릭하면 사라지고 영상이 소리와 함께 재생됨 -->
+  <div id="enter">
+    <!-- 이 문구는 자유롭게 바꾸세요 -->
+    <span class="enter-label">화면을 누르면 시작합니다</span>
+  </div>
+
+<script>
+  const enter = document.getElementById("enter");
+  const vid = document.getElementById("vid");
+
+  function startShow() {
+    vid.muted = false;       // 클릭(사용자 제스처) → 소리 허용됨
+    vid.volume = 1.0;
+    const p = vid.play();
+    if (p && p.catch) {
+      // 혹시 소리 포함 재생이 막히면 음소거로라도 재생
+      p.catch(() => { vid.muted = true; vid.play(); });
+    }
+    vid.classList.add("live");
+    enter.classList.add("gone");
+    enter.removeEventListener("click", startShow);
+  }
+
+  enter.addEventListener("click", startShow);
+</script>
+</body>
+</html>
