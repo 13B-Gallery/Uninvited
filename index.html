@@ -7,10 +7,10 @@
 
 <!--
   ┌─────────────────────────────────────────────────────────────┐
-  │  여기만 바꾸면 됩니다                                          │
-  │  아래 VIDEO_SRC 에 영상 주소(또는 파일 이름)를 넣으세요.       │
-  │   · 같은 폴더에 영상 파일을 둘 경우:  "dog.mp4"               │
-  │   · 다른 곳에 올려두고 가져올 경우:   "https://.../dog.mp4"   │
+  │  영상 파일 이름은 "dog.mp4" 입니다.                            │
+  │  GitHub 저장소(Uninvited)에 index.html 옆에 dog.mp4 를        │
+  │  같이 올려두면 자동으로 재생됩니다.                            │
+  │  (다른 이름/주소를 쓰려면 아래 <source src="..."> 만 바꾸세요) │
   └─────────────────────────────────────────────────────────────┘
 -->
 
@@ -33,7 +33,6 @@
     overflow: hidden;
   }
 
-  /* ── 영상 무대 (흰 배경 위 중앙) ────────────────────────── */
   #stage {
     position: fixed;
     inset: 0;
@@ -41,6 +40,7 @@
     align-items: center;
     justify-content: center;
     background: var(--bg);
+    cursor: pointer;
   }
 
   #vid {
@@ -49,80 +49,66 @@
     width: auto;
     height: auto;
     opacity: 0;
-    transition: opacity 1.2s ease 0.2s;
-    /* 영상이 흰 배경에 자연스럽게 놓이도록 그림자 등은 두지 않음 */
-  }
-  #vid.live { opacity: 1; }
-
-  /* ── 입장 화면 (흰 오버레이) ───────────────────────────── */
-  #enter {
-    position: fixed;
-    inset: 0;
-    z-index: 10;
-    background: var(--bg);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
     transition: opacity 1s ease;
   }
-  #enter.gone {
-    opacity: 0;
-    pointer-events: none;
-  }
+  #vid.ready { opacity: 1; }
 
-  .enter-label {
+  /* 소리 안내 문구 (은은하게, 소리 켜면 사라짐) */
+  #hint {
+    position: fixed;
+    bottom: 6vh;
+    left: 50%;
+    transform: translateX(-50%);
     font-family: "Fraunces", Georgia, serif;
     font-style: italic;
     font-weight: 300;
-    font-size: clamp(1.1rem, 2.4vw, 1.6rem);
-    letter-spacing: 0.06em;
+    font-size: clamp(0.85rem, 1.6vw, 1.05rem);
+    letter-spacing: 0.05em;
     color: var(--ink);
-    opacity: 0.55;
-    animation: breathe 3.4s ease-in-out infinite;
+    opacity: 0;
+    transition: opacity 1.2s ease;
+    pointer-events: none;
     user-select: none;
   }
-
-  @keyframes breathe {
-    0%, 100% { opacity: 0.30; }
-    50%      { opacity: 0.70; }
-  }
+  #hint.show { opacity: 0.4; }
 </style>
 </head>
 <body>
 
-  <!-- 영상 무대 -->
   <div id="stage">
-    <video id="vid" playsinline loop preload="auto">
-      <!-- ↓↓↓ 여기에 영상 주소(또는 파일 이름)를 넣으세요 ↓↓↓ -->
-      <source src="VIDEO_SRC_HERE" type="video/mp4" />
+    <video id="vid" autoplay muted loop playsinline preload="auto">
+      <source src="dog.mp4" type="video/mp4" />
     </video>
   </div>
 
-  <!-- 입장 화면: 클릭하면 사라지고 영상이 소리와 함께 재생됨 -->
-  <div id="enter">
-    <!-- 이 문구는 자유롭게 바꾸세요 -->
-    <span class="enter-label">화면을 누르면 시작합니다</span>
-  </div>
+  <!-- 이 문구는 자유롭게 바꾸거나, 원하면 지워도 됩니다 -->
+  <div id="hint">화면을 누르면 소리가 켜집니다</div>
 
 <script>
-  const enter = document.getElementById("enter");
+  const stage = document.getElementById("stage");
   const vid = document.getElementById("vid");
+  const hint = document.getElementById("hint");
 
-  function startShow() {
-    vid.muted = false;       // 클릭(사용자 제스처) → 소리 허용됨
-    vid.volume = 1.0;
-    const p = vid.play();
-    if (p && p.catch) {
-      // 혹시 소리 포함 재생이 막히면 음소거로라도 재생
-      p.catch(() => { vid.muted = true; vid.play(); });
+  // 페이지 열리면 바로 자동재생 (음소거 상태라 브라우저가 허용함)
+  vid.addEventListener("canplay", () => vid.classList.add("ready"));
+  vid.play().catch(() => {});
+
+  // 잠시 뒤 소리 안내 문구를 은은하게 표시
+  let soundOn = false;
+  setTimeout(() => { if (!soundOn) hint.classList.add("show"); }, 1500);
+
+  // 화면을 누르면 소리 켜기 / 다시 누르면 끄기
+  stage.addEventListener("click", () => {
+    soundOn = !soundOn;
+    vid.muted = !soundOn;
+    if (soundOn) {
+      vid.volume = 1.0;
+      vid.play().catch(() => {});
+      hint.classList.remove("show");
+    } else {
+      hint.classList.add("show");
     }
-    vid.classList.add("live");
-    enter.classList.add("gone");
-    enter.removeEventListener("click", startShow);
-  }
-
-  enter.addEventListener("click", startShow);
+  });
 </script>
 </body>
 </html>
