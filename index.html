@@ -6,17 +6,14 @@
 <title></title>
 
 <!--
-  ┌─────────────────────────────────────────────────────────────┐
-  │  영상 파일 이름은 "dog.mp4" 입니다.                            │
-  │  GitHub 저장소(Uninvited)에 index.html 옆에 dog.mp4 를        │
-  │  같이 올려두면 자동으로 재생됩니다.                            │
-  │  (다른 이름/주소를 쓰려면 아래 <source src="..."> 만 바꾸세요) │
-  └─────────────────────────────────────────────────────────────┘
+  영상 파일 이름은 "dog.mp4" 기준입니다. (대소문자 정확히 일치해야 함)
+  영상 크기는 아래 #vid 의 max-width / max-height 숫자로 조절하세요.
+  팝업 내용은 아래 <div id="popup"> 안을 고치면 됩니다. (지금은 임시)
 -->
 
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,300&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;1,9..144,300&display=swap" rel="stylesheet" />
 
 <style>
   :root {
@@ -43,9 +40,11 @@
     cursor: pointer;
   }
 
+  /* ▼ 영상 크기: 숫자를 키우면 커지고 줄이면 작아집니다 ▼ */
   #vid {
-    max-width: 88vw;
-    max-height: 86vh;
+    max-width: 46vw;
+    max-height: 50vh;
+    /* ▲ 영상 크기 조절 ▲ */
     width: auto;
     height: auto;
     opacity: 0;
@@ -53,24 +52,68 @@
   }
   #vid.ready { opacity: 1; }
 
-  /* 소리 안내 문구 (은은하게, 소리 켜면 사라짐) */
-  #hint {
+  /* ── 팝업 (지금은 임시 디자인) ──────────────────────────── */
+  #popup-backdrop {
     position: fixed;
-    bottom: 6vh;
-    left: 50%;
-    transform: translateX(-50%);
+    inset: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.08);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s ease;
+  }
+  #popup-backdrop.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  #popup {
+    position: relative;
+    width: min(82vw, 340px);
+    background: #fff;
+    border: 1px solid #ececec;
+    border-radius: 14px;
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.14);
+    padding: 28px 26px 26px;
+    text-align: center;
+    transform: translateY(8px) scale(0.98);
+    transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  #popup-backdrop.open #popup {
+    transform: translateY(0) scale(1);
+  }
+
+  #popup h2 {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 400;
+    font-size: 1.25rem;
+    letter-spacing: 0.01em;
+    color: var(--ink);
+    margin-bottom: 10px;
+  }
+  #popup p {
     font-family: "Fraunces", Georgia, serif;
     font-style: italic;
     font-weight: 300;
-    font-size: clamp(0.85rem, 1.6vw, 1.05rem);
-    letter-spacing: 0.05em;
-    color: var(--ink);
-    opacity: 0;
-    transition: opacity 1.2s ease;
-    pointer-events: none;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: #555;
+  }
+
+  #popup .close {
+    position: absolute;
+    top: 10px;
+    right: 14px;
+    font-size: 1.2rem;
+    color: #bbb;
+    cursor: pointer;
+    line-height: 1;
     user-select: none;
   }
-  #hint.show { opacity: 0.4; }
+  #popup .close:hover { color: #666; }
 </style>
 </head>
 <body>
@@ -81,34 +124,52 @@
     </video>
   </div>
 
-  <!-- 이 문구는 자유롭게 바꾸거나, 원하면 지워도 됩니다 -->
-  <div id="hint">화면을 누르면 소리가 켜집니다</div>
+  <!-- ▼▼▼ 팝업: 이 안의 내용·디자인은 나중에 원하는 대로 바꿉니다 (지금은 임시) ▼▼▼ -->
+  <div id="popup-backdrop">
+    <div id="popup">
+      <span class="close" id="popup-close">×</span>
+      <h2>제목을 여기에</h2>
+      <p>여기에 보여주고 싶은 내용을 넣으면 됩니다.</p>
+    </div>
+  </div>
+  <!-- ▲▲▲ 팝업 끝 ▲▲▲ -->
 
 <script>
   const stage = document.getElementById("stage");
   const vid = document.getElementById("vid");
-  const hint = document.getElementById("hint");
+  const backdrop = document.getElementById("popup-backdrop");
+  const popup = document.getElementById("popup");
+  const closeBtn = document.getElementById("popup-close");
 
-  // 페이지 열리면 바로 자동재생 (음소거 상태라 브라우저가 허용함)
+  // 페이지 열리면 바로 자동재생 (음소거 → 브라우저 허용)
   vid.addEventListener("canplay", () => vid.classList.add("ready"));
   vid.play().catch(() => {});
 
-  // 잠시 뒤 소리 안내 문구를 은은하게 표시
   let soundOn = false;
-  setTimeout(() => { if (!soundOn) hint.classList.add("show"); }, 1500);
 
-  // 화면을 누르면 소리 켜기 / 다시 누르면 끄기
+  // 화면 클릭: 1번째 → 소리 켜기 / 그다음부터 → 팝업 열고 닫기
   stage.addEventListener("click", () => {
-    soundOn = !soundOn;
-    vid.muted = !soundOn;
-    if (soundOn) {
+    if (!soundOn) {
+      soundOn = true;
+      vid.muted = false;
       vid.volume = 1.0;
       vid.play().catch(() => {});
-      hint.classList.remove("show");
     } else {
-      hint.classList.add("show");
+      backdrop.classList.toggle("open");
     }
   });
+
+  // 팝업 내부를 눌러도 닫히지 않도록
+  popup.addEventListener("click", (e) => e.stopPropagation());
+
+  // 닫기 버튼
+  closeBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    backdrop.classList.remove("open");
+  });
+
+  // 팝업 바깥(어두운 영역) 클릭 시 닫기
+  backdrop.addEventListener("click", () => backdrop.classList.remove("open"));
 </script>
 </body>
 </html>
